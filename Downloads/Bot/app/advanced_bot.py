@@ -78,3 +78,31 @@ trading_allowed = True
 "if __name__ == '__main__':" 
 "    start_background_tasks()" 
 "    socketio.run(app, host=\"0.0.0.0\", port=int(os.getenv(\"PORT\", 5000)))" 
+import functools 
+from flask import request, Response 
+ 
+"# Authentication Config" 
+AUTH_USERNAME = \"advanced\" 
+AUTH_PASSWORD = \"profit\" 
+ 
+"def check_auth(username, password):" 
+"    return username == AUTH_USERNAME and password == AUTH_PASSWORD" 
+ 
+"def authenticate():" 
+"    \"\"\"Send a 401 response that enables basic auth\"\"\"" 
+"    return Response('Unauthorized Access! Provide valid credentials.', 401," 
+"                    {'WWW-Authenticate': 'Basic realm=\"Login Required\"'})" 
+ 
+"def requires_auth(f):" 
+"    @functools.wraps(f)" 
+"    def decorated(*args, **kwargs):" 
+"        auth = request.authorization" 
+"        if not auth or not check_auth(auth.username, auth.password):" 
+"            return authenticate()" 
+"        return f(*args, **kwargs)" 
+"    return decorated" 
+ 
+"@app.route('/status')" 
+"@requires_auth" 
+"def status():" 
+"    return jsonify({\"trading_allowed\": trading_allowed})" 
